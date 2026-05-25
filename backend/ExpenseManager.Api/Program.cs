@@ -9,23 +9,10 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Connection string ────────────────────────────────────────────────────────
-// Railway provides DATABASE_URL (postgresql://user:pass@host:port/db).
-// Local docker-compose uses ConnectionStrings__DefaultConnection.
 static string ResolveConnectionString(IConfiguration config)
 {
-    var url = Environment.GetEnvironmentVariable("DATABASE_URL");
-    if (!string.IsNullOrEmpty(url))
-    {
-        var uri   = new Uri(url);
-        var parts = uri.UserInfo.Split(':', 2);
-        var user  = Uri.UnescapeDataString(parts[0]);
-        var pass  = parts.Length > 1 ? Uri.UnescapeDataString(parts[1]) : "";
-        var port  = uri.Port > 0 ? uri.Port : 5432;
-        var db    = uri.AbsolutePath.TrimStart('/');
-        return $"Host={uri.Host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
-    }
-    return config.GetConnectionString("DefaultConnection")
+    return Environment.GetEnvironmentVariable("DATABASE_URL")
+           ?? config.GetConnectionString("DefaultConnection")
            ?? throw new InvalidOperationException("No database connection string configured.");
 }
 
