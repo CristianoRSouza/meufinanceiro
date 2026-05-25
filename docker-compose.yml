@@ -1,0 +1,112 @@
+name: financeiro
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: expense-postgres
+    environment:
+      POSTGRES_DB: expensedb
+      POSTGRES_USER: expenseuser
+      POSTGRES_PASSWORD: expensepass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U expenseuser -d expensedb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - expense-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: expense-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: "@Masha3112"
+
+      # Banco
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/expensedb
+      KC_DB_USERNAME: expenseuser
+      KC_DB_PASSWORD: expensepass
+
+      # Hostname para acesso local
+      KC_HOSTNAME: localhost
+      KC_HTTP_ENABLED: "true"
+
+    command: start-dev --import-realm
+
+    ports:
+      - "8080:8080"
+
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import
+      - ./keycloak/themes:/opt/keycloak/themes
+
+    depends_on:
+      - postgres
+
+    networks:
+      - expense-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: expense-backend
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+
+      # PostgreSQL
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=expensedb;Username=expenseuser;Password=expensepass
+
+      # Keycloak
+      Keycloak__Authority: http://expense-keycloak:8080/realms/expense-realm
+      Keycloak__Audience: expense-api
+
+    ports:
+      - "5000:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    restart: on-failure
+
+    networks:
+      - expense-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: expense-frontend
+
+    environment:
+      API_URL: http://localhost:5000/api
+      KEYCLOAK_URL: http://localhost:8080
+      KEYCLOAK_REALM: expense-realm
+      KEYCLOAK_CLIENT_ID: expense-frontend
+
+    ports:
+      - "3000:80"
+
+    depends_on:
+      - backend
+
+    networks:
+      - expense-network
+
+volumes:
+  postgres_data:
+
+networks:
+  expense-network:
+    driver: bridge
