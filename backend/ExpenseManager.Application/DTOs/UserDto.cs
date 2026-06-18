@@ -5,6 +5,7 @@ public record UserDto(
     string Email,
     decimal MonthlySalary,
     decimal ReservedAmount,
+    int SalaryDay,
     string? Nome,
     string? Sobrenome,
     string? Apelido,
@@ -19,6 +20,7 @@ public record CreateUserDto(
     string Email,
     decimal MonthlySalary,
     decimal ReservedAmount,
+    int SalaryDay = 1,
     string? Nome = null,
     string? Sobrenome = null,
     string? Apelido = null,
@@ -32,6 +34,7 @@ public record CreateUserDto(
 public record UpdateUserDto(
     decimal MonthlySalary,
     decimal ReservedAmount,
+    int SalaryDay = 1,
     string? Nome = null,
     string? Sobrenome = null,
     string? Apelido = null,

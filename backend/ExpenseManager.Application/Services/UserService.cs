@@ -15,7 +15,7 @@ public class UserService : IUserService
     }
 
     private static UserDto ToDto(User u) => new(
-        u.Id, u.Email, u.MonthlySalary, u.ReservedAmount,
+        u.Id, u.Email, u.MonthlySalary, u.ReservedAmount, u.SalaryDay,
         u.Nome, u.Sobrenome, u.Apelido, u.Telefone,
         u.DataNascimento, u.Cpf, u.Ocupacao, u.Genero
     );
@@ -36,6 +36,7 @@ public class UserService : IUserService
             Email = dto.Email,
             MonthlySalary = dto.MonthlySalary,
             ReservedAmount = dto.ReservedAmount,
+            SalaryDay = Math.Clamp(dto.SalaryDay, 1, 28),
             Nome = dto.Nome,
             Sobrenome = dto.Sobrenome,
             Apelido = dto.Apelido,
@@ -61,6 +62,7 @@ public class UserService : IUserService
 
         user.MonthlySalary = dto.MonthlySalary;
         user.ReservedAmount = dto.ReservedAmount;
+        user.SalaryDay = Math.Clamp(dto.SalaryDay, 1, 28);
         user.Nome = dto.Nome;
         user.Sobrenome = dto.Sobrenome;
         user.Apelido = dto.Apelido;

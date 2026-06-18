@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.KeycloakId).IsRequired().HasMaxLength(255);
             entity.Property(e => e.MonthlySalary).HasPrecision(18, 2);
             entity.Property(e => e.ReservedAmount).HasPrecision(18, 2);
+            entity.Property(e => e.SalaryDay).HasDefaultValue(1);
             entity.Property(e => e.Nome).HasMaxLength(100);
             entity.Property(e => e.Sobrenome).HasMaxLength(100);
             entity.Property(e => e.Apelido).HasMaxLength(100);

@@ -117,6 +117,7 @@ using (var scope = app.Services.CreateScope())
         ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "Cpf"            varchar(14);
         ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "Ocupacao"       varchar(200);
         ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "Genero"         varchar(50);
+        ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "SalaryDay"      integer NOT NULL DEFAULT 1;
 
         CREATE TABLE IF NOT EXISTS "Goals" (
             "Id"            uuid          NOT NULL PRIMARY KEY,

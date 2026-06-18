@@ -24,10 +24,23 @@ public class ExpenseService : IExpenseService
     private static DateTime ToUtc(DateTime dt) =>
         dt.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(dt, DateTimeKind.Utc) : dt.ToUniversalTime();
 
+    private static DateTime GetSalaryPeriodStart(int salaryDay, DateTime now)
+    {
+        var day = Math.Clamp(salaryDay, 1, 28);
+        if (now.Day >= day)
+            return new DateTime(now.Year, now.Month, day, 0, 0, 0, DateTimeKind.Utc);
+
+        var prev = now.AddMonths(-1);
+        var maxDay = DateTime.DaysInMonth(prev.Year, prev.Month);
+        return new DateTime(prev.Year, prev.Month, Math.Min(day, maxDay), 0, 0, 0, DateTimeKind.Utc);
+    }
+
     public async Task<IEnumerable<ExpenseDto>> GetUserExpensesAsync(string keycloakId)
     {
         var user = await GetUserByKeycloakIdAsync(keycloakId);
-        var expenses = await _unitOfWork.Repository<Expense>().FindAsync(e => e.UserId == user.Id);
+        var periodStart = GetSalaryPeriodStart(user.SalaryDay, DateTime.UtcNow);
+        var expenses = await _unitOfWork.Repository<Expense>().FindAsync(
+            e => e.UserId == user.Id && e.DueDate >= periodStart);
         return expenses.Select(e => new ExpenseDto(e.Id, e.Description, e.Amount, e.Category, e.DueDate, e.IsPaid, e.PaidAt));
     }
 
@@ -116,7 +129,11 @@ public class ExpenseService : IExpenseService
         if (user == null)
             return new DashboardDto(0, 0, 0, 0, 0, 0, new List<CategorySummaryDto>(), new List<ExpenseDto>(), new List<MonthlyTotalDto>());
 
-        var expenses = await _unitOfWork.Repository<Expense>().FindAsync(e => e.UserId == user.Id);
+        var now = DateTime.UtcNow;
+        var periodStart = GetSalaryPeriodStart(user.SalaryDay, now);
+
+        var expenses = await _unitOfWork.Repository<Expense>().FindAsync(
+            e => e.UserId == user.Id && e.DueDate >= periodStart);
         var expenseList = expenses.ToList();
 
         var totalExpenses = expenseList.Sum(e => e.Amount);
@@ -135,7 +152,6 @@ public class ExpenseService : IExpenseService
             .ToList();
 
         var ptBR = new CultureInfo("pt-BR");
-        var now = DateTime.UtcNow;
         var monthlyTotals = Enumerable.Range(0, 6)
             .Select(i =>
             {

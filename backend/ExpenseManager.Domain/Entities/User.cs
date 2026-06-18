@@ -7,6 +7,7 @@ public class User
     public string Email { get; set; } = string.Empty;
     public decimal MonthlySalary { get; set; }
     public decimal ReservedAmount { get; set; }
+    public int SalaryDay { get; set; } = 1;
 
     // Personal info
     public string? Nome { get; set; }
