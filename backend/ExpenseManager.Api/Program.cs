@@ -11,9 +11,25 @@ var builder = WebApplication.CreateBuilder(args);
 
 static string ResolveConnectionString(IConfiguration config)
 {
-    return Environment.GetEnvironmentVariable("DATABASE_URL")
-           ?? config.GetConnectionString("DefaultConnection")
-           ?? throw new InvalidOperationException("No database connection string configured.");
+    var raw = Environment.GetEnvironmentVariable("DATABASE_URL")
+              ?? config.GetConnectionString("DefaultConnection")
+              ?? throw new InvalidOperationException("No database connection string configured.");
+
+    // Railway fornece URLs no formato postgresql://user:pass@host:port/db
+    // Npgsql exige o formato key=value
+    if (raw.StartsWith("postgresql://") || raw.StartsWith("postgres://"))
+    {
+        var uri = new Uri(raw);
+        var userInfo = uri.UserInfo.Split(':');
+        var user = userInfo[0];
+        var pass = userInfo.Length > 1 ? userInfo[1] : "";
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var db   = uri.AbsolutePath.TrimStart('/');
+        return $"Host={host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Require;Trust Server Certificate=true";
+    }
+
+    return raw;
 }
 
 // Database
